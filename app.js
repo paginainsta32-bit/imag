@@ -1,72 +1,84 @@
-﻿const imageInput = document.getElementById('imageInput');
-const canvas = document.getElementById('stage');
-const ctx = canvas.getContext('2d');
-const renderBtn = document.getElementById('renderBtn');
+const imageInput = document.getElementById('imageInput');
+const imagePreview = document.getElementById('imagePreview');
+const promptInput = document.getElementById('promptInput');
+const apiKeyInput = document.getElementById('apiKeyInput');
+const generateBtn = document.getElementById('generateBtn');
+const statusDiv = document.getElementById('status');
 const outputVideo = document.getElementById('outputVideo');
-const downloadBtn = document.getElementById('downloadBtn');
 
-let img = new Image();
+let uploadedImageUrl = '';
 
-imageInput.addEventListener('change', (e) => {
+// Converte a imagem local em URL temporária ou realiza upload para hospedar
+imageInput.addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  const url = URL.createObjectURL(file);
-  img.onload = () => {
-    // Desenha estado inicial
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    renderBtn.disabled = false;
-  };
-  img.src = url;
+
+  imagePreview.src = URL.createObjectURL(file);
+  imagePreview.style.display = 'block';
+
+  // Exemplo de upload simples para um servidor público de imagens (necessário para enviar URL à API)
+  statusDiv.innerText = "Carregando imagem...";
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', 'ml_default'); // Caso use Cloudinary gratuito, por exemplo
+
+  try {
+    // Você pode usar qualquer serviço temporário de upload de imagem
+    const res = await fetch('https://api.tmpfiles.org/api/v1/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    uploadedImageUrl = data.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+    statusDiv.innerText = "Imagem pronta para geração!";
+  } catch (err) {
+    statusDiv.innerText = "Erro ao carregar a imagem. Tente novamente.";
+  }
 });
 
-renderBtn.addEventListener('click', async () => {
-  renderBtn.disabled = true;
-  renderBtn.innerText = 'Processando...';
+generateBtn.addEventListener('click', async () => {
+  const apiKey = apiKeyInput.value.trim();
+  const prompt = promptInput.value.trim();
 
-  const duration = 5; // segundos
-  const fps = 30;
-  const totalFrames = duration * fps;
-  
-  // Stream do Canvas
-  const stream = canvas.captureStream(fps);
-  const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
-  
-  const chunks = [];
-  mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-  mediaRecorder.onstop = () => {
-    const blob = new Blob(chunks, { type: 'video/webm' });
-    const videoUrl = URL.createObjectURL(blob);
-    outputVideo.src = videoUrl;
-    downloadBtn.href = videoUrl;
-    downloadBtn.download = 'video-5s.webm';
-    downloadBtn.style.display = 'inline-block';
-    downloadBtn.innerText = 'Baixar Vídeo';
-    renderBtn.disabled = false;
-    renderBtn.innerText = 'Gerar Vídeo MP4/WebM';
-  };
+  if (!uploadedImageUrl) {
+    alert("Por favor, selecione uma imagem primeiro.");
+    return;
+  }
+  if (!apiKey) {
+    alert("Insira sua API Key da Fal.ai ou da plataforma configurada.");
+    return;
+  }
 
-  mediaRecorder.start();
+  generateBtn.disabled = true;
+  statusDiv.innerText = "Iniciando geração do vídeo com IA (pode levar cerca de 30 a 60 segundos)...";
 
-  let frame = 0;
-  const interval = setInterval(() => {
-    const progress = frame / totalFrames; // 0.0 a 1.0
+  try {
+    // Chamada para o modelo Luma / Kling na Fal.ai
+    const response = await fetch("https://fal.run/fal-ai/luma-dream-machine/image-to-video", {
+      method: "POST",
+      headers: {
+        "Authorization": `Key ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        prompt: prompt || "natural realistic character motion",
+        image_url: uploadedImageUrl
+      })
+    });
 
-    // Limpa canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const result = await response.json();
 
-    // Efeito de Zoom Leve (Ken Burns) ao longo dos 5s
-    const scale = 1 + progress * 0.1; // Zoom de 10% em 5s
-    const w = canvas.width * scale;
-    const h = canvas.height * scale;
-    const x = (canvas.width - w) / 2;
-    const y = (canvas.height - h) / 2;
-
-    ctx.drawImage(img, x, y, w, h);
-
-    frame++;
-    if (frame > totalFrames) {
-      clearInterval(interval);
-      mediaRecorder.stop();
+    if (result.video && result.video.url) {
+      statusDiv.innerText = "Vídeo gerado com sucesso!";
+      outputVideo.src = result.video.url;
+      outputVideo.style.display = 'block';
+    } else {
+      statusDiv.innerText = "Erro ao processar o vídeo: " + JSON.stringify(result);
     }
-  }, 1000 / fps);
+  } catch (error) {
+    console.error(error);
+    statusDiv.innerText = "Erro de conexão ou requisição falhou.";
+  } finally {
+    generateBtn.disabled = false;
+  }
 });
