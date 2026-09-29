@@ -1,0 +1,23 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerador de Vídeo de Imagem (5s)</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>Transformar Imagem em Vídeo (5 Segundos)</h2>
+    <input type="file" id="imageInput" accept="image/*">
+    <br>
+    <canvas id="stage" width="1280" height="720"></canvas>
+    <br>
+    <button id="renderBtn" disabled>Gerar Vídeo MP4/WebM</button>
+    <br>
+    <video id="outputVideo" controls></video>
+    <br>
+    <a id="downloadBtn" style="display:none">Baixar Vídeo</a>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
