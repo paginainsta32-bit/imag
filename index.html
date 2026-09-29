@@ -1,23 +1,34 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Gerador de Vídeo de Imagem (5s)</title>
+  <title>Gerador de Animação de Personagens com IA</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
-    <h2>Transformar Imagem em Vídeo (5 Segundos)</h2>
+    <h1>Transformar Imagem em Vídeo com IA</h1>
+    <p>Envie uma imagem e defina como o personagem ou objeto deve se mover.</p>
+    
+    <label>1. Escolha a imagem:</label>
     <input type="file" id="imageInput" accept="image/*">
-    <br>
-    <canvas id="stage" width="1280" height="720"></canvas>
-    <br>
-    <button id="renderBtn" disabled>Gerar Vídeo MP4/WebM</button>
-    <br>
-    <video id="outputVideo" controls></video>
-    <br>
-    <a id="downloadBtn" style="display:none">Baixar Vídeo</a>
+    
+    <div id="previewContainer">
+      <img id="imagePreview" src="" alt="Pré-visualização" style="display:none; max-width: 300px;">
+    </div>
+
+    <label>2. Descreva o movimento (ex: "personagem sorrindo e acenando", "fumaça subindo"):</label>
+    <input type="text" id="promptInput" placeholder="Ex: A character walking forward and smiling">
+
+    <label>3. Sua Chave API Fal.ai (ou configure via Proxy):</label>
+    <input type="password" id="apiKeyInput" placeholder="Sua Fal.ai API Key">
+
+    <button id="generateBtn">Gerar Vídeo de 5s</button>
+
+    <div id="status"></div>
+    <video id="outputVideo" controls style="display:none; max-width: 100%; margin-top: 15px;"></video>
   </div>
+
   <script src="app.js"></script>
 </body>
 </html>
